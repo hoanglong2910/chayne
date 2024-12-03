@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ai Là Gián Điệp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
+        }
+        #player-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .player {
+            margin: 10px;
+            padding: 20px 40px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            width: 200px;
+            text-align: center;
+        }
+        .player:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #timer, #message {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        #message {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ai Là Gián Điệp</h1>
+    <label for="numPlayers">Nhập số lượng người chơi:</label>
+    <input type="number" id="numPlayers" min="3" placeholder="Nhập số lượng người chơi" required>
+    <button onclick="setupGame()">Bắt đầu trò chơi</button>
+    <button onclick="endGameNow()">Kết thúc trò chơi</button>
+    
+    <div id="toggle-spy-keyword">
+        <button onclick="toggleSpyKeyword()">Bật/Tắt chức năng thêm từ khóa cho gián điệp</button>
+    </div>
+    <div id="player-container"></div>
+    <div id="timer">Thời gian còn lại: 03:00</div>
+    <div id="message"></div>
+
+    <audio id="alarm-sound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+
+    <script>
+        // Kho từ khóa được phân thành các chủ đề khác nhau
+        const keywordStore = {
+            "Đồ gia dụng":[
+                "Bàn", "Ghế", "Giường", "Tủ", "Kệ sách", "Tủ lạnh", "Máy giặt", "Máy rửa bát", 
+            "Tủ bếp", "Tủ quần áo", "Tivi", "Lò vi sóng", "Điều hòa", "Quạt điện", "Máy sưởi", 
+            "Máy tính", "Loa", "Đầu DVD", "Máy chiếu", "Điện thoại", "Nồi", "Chảo", "Bình đun nước", 
+            "Mâm", "Dĩa", "Kéo", "Dao", "Muỗng", "Nĩa", "Chén", "Cốc", "Tô", "Bàn chải", "Kem đánh răng", 
+            "Khăn tắm", "Xà phòng", "Dầu gội", "Sữa tắm", "Nước lau nhà", "Chổi", "Cây lau nhà", "Sofa", 
+            "Gối", "Thảm", "Bàn trà", "Kệ TV", "Đèn bàn", "Bình hoa", "Cửa sổ", "Rèm cửa", "Chăn", "Gối", 
+            "Nệm", "Mền", "Tủ đầu giường", "Bàn trang điểm", "Đèn ngủ", "Đồng hồ báo thức", "Bồn tắm", 
+            "  Vòi sen", "Bồn cầu", "Chậu rửa mặt", "Gương", "Tủ thuốc", "Khăn tắm", "Nước rửa tay", "Tranh", 
+            "Tượng", "Đèn chùm", "Đồng hồ treo tường", "Cây cảnh", "Đèn bàn", "Mặt gương", "Sách", "Vở", 
+            "Bút", "Thước kẻ", "Bảng", "Vở bài tập", "Máy tính", "Cặp sách", "Bàn ghế ngoài trời", "Xích đu", 
+            "Vòi tưới cây", "Đèn sân vườn", "Lều", "Bạt", "Dù che nắng"
+            ],
+            "Phương tiện": [
+                "Máy bay","xe rùa","Xe máy cày", "Ô tô", "Xe hơi", "Tàu hỏa", "Sân bay", "Xe buýt", "Xe đạp", "Tàu thủy","xe máy", "xe đồ chơi","xe đạp điện","xe tăng","xe cứu thương","máy bay","Xe chở hàng","Taxi","Grab"
+            ],
+            "Động vật": [
+                "Cá heo", "Chó", "Mèo", "Sư tử", "Cá voi", "Ngựa", "Hươu", "Voi", "Khỉ", "Con Hổ", "Cá hề", "Con rắn mối", "Con rắn", "Con mối", "Con xén tóc", "Con gián", "Con người", "Con chuột", "Con trâu", "Con bò", "Con kiến", "Gấu", "Hổ báo", "Chim cánh cụt"
+                , "Sư tử biển", "Cá sấu", "Con lợn", "Con ngỗng", "Con gà", "Con vịt", "Bò sát", "Con thỏ", "Con cá mập", "Cừu", "Dê", "Chồn", "Dơi", "Cá chép", "Con sứa", "Con bướm", "Con ve", "Con ếch", "Con rùa", "Con sóc", "Con chim", "Con ngựa vằn", "Con lươn"
+                , "Con bạch tuộc", "Con mực", "Con ba ba", "Cá trê", "Cá lóc", "Cá ngừ", "Con chồn hương", "Con rái cá", "Con linh cẩu", "Con báo", "Con mèo hoang", "Con bướm đêm", "Con nhện", "Con tằm", "Con cú", "Con vẹt", "Con mòng biển", "Con chào mào", "Con chim sáo"
+                , "Con hải cẩu", "Con mòng biển", "Con quạ", "Con vượn", "Con bồ câu", "Con đại bàng", "Con gà tây", "Con trĩ", "Con chim sẻ", "Con chíp", "Con đà điểu", "Con cò", "Con nai", "Con sói", "Con cáo", "Con ngựa kéo", "Con rái cá biển", "Con chim hồng hạc", "Con chim cút"
+                , "Con trăn", "Con kỳ nhông", "Con rồng", "Con chim công", "Con rùa núi", "Con lạc đà", "Con lợn rừng", "Con khỉ đột", "Con kỳ lân"
+            ],
+            "Địa điểm": [
+                "Nhà hàng", "Công viên", "Bảo tàng", "Rạp chiếu phim", "Trường học", "Bệnh viện", "Khu vui chơi", "Bãi biển", "Hồ bơi", "Chợ", "Sân vận động", "Thư viện", "Khách sạn", "Nhà ma", "Kí túc xá", "Quán cà phê", "Trung tâm thương mại", "Siêu thị", "Quán bar", "Phòng khám"
+                , "Sân golf", "Khu nghỉ dưỡng", "Đài phun nước", "Vườn thú", "Nhà thờ", "Chùa", "Khu di tích", "Bến tàu", "Sân bay", "Cầu cảng", "Nhà hát", "Bảo tàng nghệ thuật", "Vườn quốc gia", "Khu phố cổ", "Lâu đài", "Công trường", "Làng nghề", "Khu nghỉ dưỡng cao cấp"
+                , "Khu du lịch", "Sân khấu", "Phòng triển lãm", "Khu giải trí", "Chợ đêm", "Khu phố đi bộ", "Vườn hoa", "Bến xe", "Tòa nhà chọc trời", "Vườn cây", "Địa điểm cắm trại", "Vườn sinh thái", "Nhà máy", "Khu chế xuất", "Cảng biển", "Khu công nghiệp", "Khu dân cư", "Bãi đỗ xe"
+            ],
+            "Thực phẩm": [
+                "Bánh mì", "Pizza", "Kem", "Bánh ngọt", "Mì Ý", "Cà phê", "Trái cây", "Cà ri", "Bánh xèo", "Sushi", "Phở", "Bánh bao", "Bánh cuốn", "Bánh chưng", "Bánh tét", "Bánh bông lan", "Hủ tiếu", "Cơm tấm", "Cháo", "Bún bò Huế", "Mỳ gói", "Gỏi cuốn", "Bánh tráng", "Chả giò"
+                , "Cơm chiên", "Mì quảng", "Bánh pía", "Bánh flan", "Sữa chua", "Bánh rán", "Bánh mì que", "Bánh macaron", "Chè", "Thịt nướng", "Xôi", "Sườn nướng", "Bánh kem", "Bánh ngô", "Bánh chuối", "Lẩu", "Bánh khọt", "Bánh khoai", "Cá chiên", "Gà rán", "Bò viên", "Nem nướng"
+                , "Đậu phụ", "Mực nướng", "Lẩu hải sản", "Bánh xếp", "Mứt", "Hạt điều", "Sữa đậu nành", "Chả cá", "Cà ri gà", "Gà nướng", "Bò bít tết", "Cà phê sữa đá", "Trà sữa", "Nước ép trái cây", "Nước mía", "Bánh mì kẹp", "Món xào", "Hải sản", "Sườn nướng", "Trứng rán", "Sushi cuộn", "Bánh bột lọc"
+            ],
+            "Hoạt động": [
+                "Bóng đá", "Cầu lông", "Chạy bộ", "Bơi lội", "Đạp xe", "Đi bộ đường dài", "Bóng rổ", "Câu cá", "Tennis", "Bóng chuyền", "Bóng bàn", "Yoga", "Pilates", "Gym", "Đi bộ", "Leo núi", "Chèo thuyền", "Lướt ván", "Bắn cung", "Golf", "Khúc côn cầu", "Đá cầu", "Tập thể dục", "Nhảy dây", "Bơi biển"
+                , "Thể hình", "Trượt băng", "Trượt patin", "Đá bóng mini", "Đua xe", "Hockey", "Lặn biển", "Dưỡng sinh", "Kéo co", "Đua thuyền", "Lướt sóng", "Đánh cầu mây", "Chạy marathon", "Đua xe đạp", "Thể thao mạo hiểm", "Trượt ván", "Bóng đá bãi biển", "Bóng đá trong nhà", "Nhảy múa", "Bơi ếch"
+                , "Bơi bướm", "Đấm bốc", "Võ thuật", "Karate", "Taekwondo", "Judo", "Boxing", "Vượt chướng ngại vật", "Đi xe địa hình", "Lướt ván diều", "Trượt tuyết", "Hít đất", "Bơi tự do"
+            ],
+            "Văn hóa": [
+                "Phim hoạt hình", "Nhạc cổ điển", "Nhạc rock", "Ca sĩ", "Sân khấu", "Thể thao", "Hội họa", "Lịch sử", "Điện ảnh", "Nhạc jazz", "Nhạc pop", "Nhạc dân tộc", "Nhạc rap", "Vũ đạo", "Múa", "Kịch", "Văn học", "Thơ", "Truyện ngắn", "Hội thi", "Triển lãm", "Phim tài liệu", "Tượng nghệ thuật"
+                , "Chèo", "Cải lương", "Nhạc đồng quê", "Nhạc blues", "Nghệ thuật thị giác", "Nghệ thuật biểu diễn", "Lễ hội", "Văn hóa dân gian", "Chèo thuyền", "Tục lệ", "Hát xẩm", "Ca trù", "Hội chợ", "Nhạc điện tử", "Sân khấu kịch", "Chương trình truyền hình", "Phim hành động", "Phim tâm lý",
+                "Phim lãng mạn", "Văn hóa ẩm thực", "Văn hóa tôn giáo", "Phong tục", "Lễ cưới", "Lễ hội hóa trang", "Văn hóa dân tộc", "Văn hóa giao tiếp", "Nghệ thuật ẩm thực", "Văn hóa giao lưu quốc tế", "Lễ hội truyền thống", "Sách", "Truyện cổ tích", "Sân khấu truyền thống", "Sưu tầm", "Văn hóa doanh nghiệp"
+                , "Bảo tàng", "Lịch sử nghệ thuật", "Tình nguyện", "Phim khoa học viễn tưởng", "Ballet", "Nhạc cụ truyền thống"
+            ],
+            "Môn học": [
+            "Toán", "Vật lý", "Hóa học", "Sinh học", "Lịch sử", "Địa lý", "Ngữ văn", 
+            "Tiếng Anh", "Giáo dục công dân", "Âm nhạc", "Mỹ thuật", "Tin học", 
+            "Thể dục", "Công nghệ", "Kinh tế", "Xã hội học", "Tâm lý học", "Lý luận chính trị", 
+            "Triết học", "Luật", "Quản trị kinh doanh", "Pháp luật", "Lập trình", "Marketing", 
+            "Kỹ thuật điện", "Kỹ thuật cơ khí", "Dược", "Y học", "Nông nghiệp", "Thú y"
+            ],
+            "Đất nước": [
+            "Việt Nam", "Hoa Kỳ", "Anh", "Pháp", "Đức", "Nhật Bản", "Hàn Quốc", 
+            "Trung Quốc", "Ấn Độ", "Brazil", "Úc", "Canada", "Nga", "Italy", 
+            "Mexico", "Tây Ban Nha", "Thái Lan", "Malaysia", "Singapore", "Indonesia","Hàn Quốc"
+            ],
+            "Quần áo": [
+            "Áo sơ mi", "Áo thun", "Áo khoác", "Áo len", "Áo vest", 
+            "Quần jeans", "Quần short", "Quần tây", "Quần áo thể thao", 
+            "Chân váy", "Váy", "Đầm", "Áo dài", "Áo trễ vai", "Áo ba lỗ", 
+            "Áo phông", "Áo hoodie", "Áo mưa", "Bộ đồ ngủ", "Bộ đồ bơi", 
+            "Sơ mi caro", "Sơ mi trắng", "Váy liền thân", "Váy xòe", "Váy ôm", 
+            "Váy đầm suông", "Áo croptop", "Áo sơ mi nữ", "Áo sơ mi nam", 
+            "Giày thể thao", "Giày cao gót", "Giày bệt", "Giày boot", "Dép", "Dép sandal", 
+            "Vớ", "Mũ", "Khăn quàng", "Găng tay", "Áo gió", "Áo tắm", "Bộ đồ công sở"
+]      
+        };
+
+        let spyIndex;
+        let mainKeyword = "";  // Từ khóa chính cho người chơi
+        let spyKeyword = "";   // Từ khóa dành cho gián điệp
+        let players = [];
+        let countdownInterval;
+        let currentPlayer = 0;
+        let enableSpyKeyword = false;  // Biến kiểm tra chức năng thêm từ khóa cho gián điệp
+
+        function setupGame() {
+            const numPlayers = parseInt(document.getElementById('numPlayers').value);
+            const playerContainer = document.getElementById('player-container');
+            playerContainer.innerHTML = "";  // Xóa người chơi cũ
+            document.getElementById('message').innerText = ""; // Xóa tin nhắn cũ
+            resetTimer(); // Đặt lại đồng hồ đếm ngược
+            currentPlayer = 0; // Đặt lại người chơi hiện tại
+
+            if (numPlayers < 3) {
+                alert("Cần ít nhất 3 người chơi để bắt đầu!");
+                return;
+            }
+
+            // Chọn ngẫu nhiên một chủ đề và một từ khóa chính từ kho
+            const randomTopic = getRandomTopic();
+            mainKeyword = getRandomKeyword(randomTopic);
+
+            // Chọn ngẫu nhiên từ khóa gián điệp, đảm bảo không trùng với từ khóa chính
+            do {
+                spyKeyword = getRandomKeyword(randomTopic);
+            } while (spyKeyword === mainKeyword);
+
+            // Chọn ngẫu nhiên gián điệp
+            spyIndex = Math.floor(Math.random() * numPlayers);
+            players = Array(numPlayers).fill().map((_, index) => {
+                return {
+                    role: index === spyIndex ? `Từ khóa: ${spyKeyword}` : `Từ khóa: ${mainKeyword}`,
+                    shown: false
+                };
+            });
+
+            // Tạo nút đầu tiên cho người chơi
+            const playerButton = document.createElement('button');
+            playerButton.innerText = `Nhấp để xem Người chơi ${currentPlayer + 1}`;
+            playerButton.className = "player";
+            playerButton.onclick = () => revealRole(playerButton);
+            playerContainer.appendChild(playerButton);
+
+            // Bắt đầu đếm ngược thời gian
+            startTimer(180); // 180 giây = 3 phút
+        }
+
+        function revealRole(button) {
+            const player = players[currentPlayer];
+            
+            // Chuyển đổi giữa hiển thị tên người chơi và vai trò
+            if (!player.shown) {
+                if (enableSpyKeyword && player.role.startsWith("Từ khóa:")) {
+                    // Nếu bật tính năng thêm từ khóa cho gián điệp, hiển thị từ khóa
+                    button.innerText = player.role;
+                } else {
+                    // Nếu tắt tính năng thêm từ khóa cho gián điệp, gián điệp sẽ chỉ nhìn thấy "SPY"
+                    button.innerText = currentPlayer === spyIndex ? "SPY" : player.role;
+                }
+                player.shown = true;
+            } else {
+                // Chuyển sang người chơi tiếp theo
+                currentPlayer++;
+                if (currentPlayer < players.length) {
+                    button.innerText = `Nhấp để xem Người chơi ${currentPlayer + 1}`;
+                    players[currentPlayer].shown = false;
+                } else {
+                    button.innerText = "Tất cả người chơi đã xem từ khóa!";
+                    button.disabled = true; // Vô hiệu hóa sau khi hết người chơi
+                }
+            }
+        }
+
+        function getRandomTopic() {
+            const topics = Object.keys(keywordStore);
+            return topics[Math.floor(Math.random() * topics.length)];
+        }
+
+        function getRandomKeyword(topic) {
+            const keywords = keywordStore[topic];
+            return keywords[Math.floor(Math.random() * keywords.length)];
+        }
+
+        function startTimer(seconds) {
+            const timerDisplay = document.getElementById('timer');
+            countdownInterval = setInterval(() => {
+                let minutes = Math.floor(seconds / 60);
+                let remainingSeconds = seconds % 60;
+                timerDisplay.innerText = `Thời gian còn lại: ${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                
+                if (seconds === 0) {
+                    clearInterval(countdownInterval);
+                    endGame();
+                } else {
+                    seconds--;
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            clearInterval(countdownInterval);
+            document.getElementById('timer').innerText = "Thời gian còn lại: 03:00";
+        }
+
+        function endGame() {
+            document.getElementById('message').innerText = "Hết giờ! Tất cả người chơi hãy đoán xem ai là gián điệp.";
+            document.getElementById('alarm-sound').play(); // Phát âm thanh khi hết giờ
+        }
+
+        function endGameNow() {
+            clearInterval(countdownInterval);
+            endGame();
+        }
+
+        function toggleSpyKeyword() {
+            enableSpyKeyword = !enableSpyKeyword; // Đổi trạng thái bật/tắt
+            const button = document.querySelector('#toggle-spy-keyword button');
+            if (enableSpyKeyword) {
+                button.innerText = "Tắt chức năng thêm từ khóa cho gián điệp";
+            } else {
+                button.innerText = "Bật chức năng thêm từ khóa cho gián điệp";
+            }
+        }
+    </script>
+</body>
+</html>
